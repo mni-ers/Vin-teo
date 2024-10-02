@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vin'teo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+
+        header {
+            background-color: #756edc;
+            color: white;
+            padding: 1em;
+            text-align: center;
+        }
+
+        nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        #item-list, #admin-list {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 10px;
+            padding: 10px;
+            width: 200px;
+            text-align: center;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #756edc;
+            color: white;
+        }
+
+        input[type="file"] {
+            margin: 10px 0;
+        }
+
+        .admin {
+            display: none; /* Caché par défaut */
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Vin'teo</h1>
+        <nav>
+            <a href="#home">Accueil</a>
+            <a href="#categories">Catégories</a>
+            <a href="#admin" onclick="promptAdminCode()">Admin</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home">
+            <h2>Bienvenue sur Vin'teo !</h2>
+            <p>Découvrez des articles uniques à petit prix !</p>
+            <input type="text" id="search" placeholder="Rechercher des articles...">
+            <button onclick="searchItems()">Rechercher</button>
+            <h3>Ajouter un article</h3>
+            <input type="text" id="item-name" placeholder="Nom de l'article">
+            <input type="text" id="item-price" placeholder="Prix de l'article en €">
+            <input type="text" id="item-owner" placeholder="Nom Vinted">
+            <input type="text" id="item-description" placeholder="Description de l'article">
+            <input type="file" id="item-image" accept="image/*">
+            <button onclick="addItem()">Ajouter</button>
+        </section>
+
+        <section id="categories">
+            <h2>Articles à vendre</h2>
+            <div id="item-list">
+                <!-- Les articles seront ajoutés ici par JavaScript -->
+            </div>
+        </section>
+
+        <section id="admin" class="admin">
+            <h2>Interface Administrateur activée</h2>
+            <div id="admin-list">
+                <!-- Les articles seront affichés ici pour l'admin -->
+            </div>
+            <h3>Modifier un article</h3>
+            <div id="edit-item" class="hidden">
+                <input type="text" id="edit-item-name" placeholder="Nom de l'article">
+                <input type="text" id="edit-item-price" placeholder="Prix de l'article en €">
+                <input type="text" id="edit-item-owner" placeholder="Nom Vinted">
+                <input type="text" id="edit-item-description" placeholder="Description de l'article">
+                <input type="file" id="edit-item-image" accept="image/*">
+                <button onclick="saveEdit()">Sauvegarder</button>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Vin'teo</p>
+    </footer>
+
+    <script>
+        let items = JSON.parse(localStorage.getItem('items')) || [];
+        let editingIndex = null;
+
+        function displayItems() {
+            const itemList = document.getElementById('item-list');
+            itemList.innerHTML = ''; // Effacer la liste avant de réafficher
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.classList.add('item');
+                div.innerHTML = `
+                    <h3>${item.name}</h3>
+                    <p>Prix: ${item.price} €</p>
+                    <p>Vinted: ${item.owner}</p>
+                    <p>${item.description}</p>
+                    <img src="${item.image}" alt="${item.name}" style="width:100%;">
+                `;
+                itemList.appendChild(div);
+            });
+        }
+
+        function addItem() {
+            const name = document.getElementById('item-name').value;
+            const price = document.getElementById('item-price').value;
+            const owner = document.getElementById('item-owner').value;
+            const description = document.getElementById('item-description').value;
+            const imageInput = document.getElementById('item-image');
+            const imageFile = imageInput.files[0];
+
+            if (name && price && owner && description && imageFile) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const newItem = { name, price, owner, description, image: event.target.result };
+                    items.push(newItem);
+                    localStorage.setItem('items', JSON.stringify(items)); // Sauvegarder dans localStorage
+                    displayItems();
+                    clearInputFields(); // Réinitialiser les champs
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                alert('Veuillez remplir tous les champs.');
+            }
+        }
+
+        function clearInputFields() {
+            document.getElementById('item-name').value = '';
+            document.getElementById('item-price').value = '';
+            document.getElementById('item-owner').value = '';
+            document.getElementById('item-description').value = '';
+            document.getElementById('item-image').value = '';
+        }
+
+        function searchItems() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const filteredItems = items.filter(item => item.name.toLowerCase().includes(searchTerm));
+            const itemList = document.getElementById('item-list');
+            itemList.innerHTML = '';
+            filteredItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.classList.add('item');
+                div.innerHTML = `
+                    <h3>${item.name}</h3>
+                    <p>Prix: ${item.price} €</p>
+                    <p>Vinted: ${item.owner}</p>
+                    <p>${item.description}</p>
+                    <img src="${item.image}" alt="${item.name}" style="width:100%;">
+                `;
+                itemList.appendChild(div);
+            });
+        }
+
+        function promptAdminCode() {
+            const code = prompt("Veuillez entrer le code admin :");
+            if (code === "@aaron") { // Change le code selon ton besoin
+                document.querySelector('.admin').style.display = 'block';
+                displayAdminItems();
+            } else {
+                alert("Code incorrect.");
+            }
+        }
+
+        function displayAdminItems() {
+            const adminList = document.getElementById('admin-list');
+            adminList.innerHTML = ''; // Effacer la liste avant de réafficher
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.classList.add('item');
+                div.innerHTML = `
+                    <h3>${item.name}</h3>
+                    <p>Prix: ${item.price} €</p>
+                    <p>Vinted: ${item.owner}</p>
+                    <p>${item.description}</p>
+                    <img src="${item.image}" alt="${item.name}" style="width:100%;">
+                    <button onclick="deleteItem(${index})">Supprimer</button>
+                    <button onclick="editItem(${index})">Modifier</button>
+                `;
+                adminList.appendChild(div);
+            });
+        }
+
+        function deleteItem(index) {
+            items.splice(index, 1); // Supprime l'élément de l'array
+            localStorage.setItem('items', JSON.stringify(items)); // Met à jour le localStorage
+            displayItems(); // Met à jour l'affichage des articles
+            displayAdminItems(); // Met à jour l'affichage admin
+        }
+
+        function editItem(index) {
+            editingIndex = index;
+            const item = items[index];
+            document.getElementById('edit-item-name').value = item.name;
+            document.getElementById('edit-item-price').value = item.price;
+            document.getElementById('edit-item-owner').value = item.owner;
+            document.getElementById('edit-item-description').value = item.description;
+            document.getElementById('edit-item-image').value = ''; // Ne préremplit pas l'image
+            document.getElementById('edit-item').classList.remove('hidden');
+        }
+
+        function saveEdit() {
+            const name = document.getElementById('edit-item-name').value;
+            const price = document.getElementById('edit-item-price').value;
+            const owner = document.getElementById('edit-item-owner').value;
+            const description = document.getElementById('edit-item-description').value;
+            const imageInput = document.getElementById('edit-item-image');
+            const imageFile = imageInput.files[0];
+
+            if (name && price && owner && description) {
+                const itemToEdit = items[editingIndex];
+                itemToEdit.name = name;
+                itemToEdit.price = price;
+                itemToEdit.owner = owner;
+                itemToEdit.description = description;
+                
+                if (imageFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        itemToEdit.image = event.target.result;
+                        localStorage.setItem('items', JSON.stringify(items));
+                        displayItems();
+                        displayAdminItems();
+                        clearEditFields();
+                    };
+                    reader.readAsDataURL(imageFile);
+                } else {
+                    localStorage.setItem('items', JSON.stringify(items));
+                    displayItems();
+                    displayAdminItems();
+                    clearEditFields();
+                }
+            } else {
+                alert('Veuillez remplir tous les champs.');
+            }
+        }
+
+        function clearEditFields() {
+            document.getElementById('edit-item-name').value = '';
+            document.getElementById('edit-item-price').value = '';
+            document.getElementById('edit-item-owner').value = '';
+            document.getElementById('edit-item-description').value = '';
+            document.getElementById('edit-item-image').value = '';
+            document.getElementById('edit-item').classList.add('hidden');
+            editingIndex = null;
+        }
+
+        window.onload = displayItems; // Afficher les articles au chargement de la page
+    </script>
+</body>
+</html>
